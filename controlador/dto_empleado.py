@@ -6,17 +6,16 @@ class EmpleadoDTO:
     def __init__(self):
         self.dao = daoEmpleado()
     
-    def cargarEmpleadosBase(self):
+    def listarEmpleados(self):
+        # CONSULTA DIRECTAMENTE LA BD CADA VEZ
         resultado = self.dao.getAllEmpleados()
+        empleados = []
         if resultado is not None:
             for emp in resultado:
                 empleado = Empleado(run=emp[0], nombre=emp[1], apellido=emp[2], 
                                   codigo=emp[3], cargo=emp[4], password=emp[5])
-                empleado.getListaEmpleados().append(empleado)
-    
-    def listarEmpleados(self):
-        empleado = Empleado("", "", "", 0, "", "")
-        return empleado.getListaEmpleados()
+                empleados.append(empleado)
+        return empleados
     
     def buscarEmpleado(self, run):
         resultado = self.dao.findEmpleado(run)

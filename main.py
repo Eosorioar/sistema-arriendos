@@ -45,7 +45,7 @@ def main():
         intentos = 1
         while intentos <= 3:
             try:
-                resu = validarLogin()  # Este pide RUN y password
+                resu = inicial()  # Este pide RUN y password
                 if resu is not None:
                     print(f"\n✅ Bienvenido(a) Sr(a). {resu.getNombre()} {resu.getApellido()}")
                     print(f"📋 Cargo: {resu.getCargo()}")

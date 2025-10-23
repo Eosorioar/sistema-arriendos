@@ -38,14 +38,16 @@ class daoArriendo:
 
     def findArriendo(self, numArriendo):
         sql = """SELECT a.numArriendo, a.fechaInicio, a.fechaEntrega, a.costoTotal,
-                        c.run, c.nombre, c.apellido, c.telefono, c.direccion,
-                        e.run, e.nombre, e.apellido, e.cargo,
-                        v.patente, v.marca, v.modelo, v.año, v.precio
-                 FROM arriendo a
-                 JOIN cliente c ON a.run_cliente = c.run
-                 JOIN empleado e ON a.run_empleado = e.run
-                 JOIN vehiculo v ON a.patente_vehiculo = v.patente
-                 WHERE a.numArriendo = %s"""
+                    pc.run as cliente_run, pc.nombre as cliente_nombre, pc.apellido as cliente_apellido,
+                    pe.run as empleado_run, pe.nombre as empleado_nombre, pe.apellido as empleado_apellido,
+                    v.patente, v.marca, v.modelo
+                FROM arriendo a
+                JOIN cliente c ON a.run_cliente = c.run
+                JOIN persona pc ON c.run = pc.run
+                JOIN empleado e ON a.run_empleado = e.run  
+                JOIN persona pe ON e.run = pe.run
+                JOIN vehiculo v ON a.patente_vehiculo = v.patente
+                WHERE a.numArriendo = %s"""
         resultado = None
         c = self.getConex()
         try:
@@ -60,13 +62,15 @@ class daoArriendo:
 
     def getAllArriendos(self):
         sql = """SELECT a.numArriendo, a.fechaInicio, a.fechaEntrega, a.costoTotal,
-                        c.run, c.nombre, c.apellido,
-                        e.run, e.nombre, e.apellido,
-                        v.patente, v.marca, v.modelo
-                 FROM arriendo a
-                 JOIN cliente c ON a.run_cliente = c.run
-                 JOIN empleado e ON a.run_empleado = e.run
-                 JOIN vehiculo v ON a.patente_vehiculo = v.patente"""
+                    pc.run as cliente_run, pc.nombre as cliente_nombre, pc.apellido as cliente_apellido,
+                    pe.run as empleado_run, pe.nombre as empleado_nombre, pe.apellido as empleado_apellido,
+                    v.patente, v.marca, v.modelo
+                FROM arriendo a
+                JOIN cliente c ON a.run_cliente = c.run
+                JOIN persona pc ON c.run = pc.run  -- JOIN con persona para el cliente
+                JOIN empleado e ON a.run_empleado = e.run  
+                JOIN persona pe ON e.run = pe.run  -- JOIN con persona para el empleado
+                JOIN vehiculo v ON a.patente_vehiculo = v.patente"""
         c = self.getConex()
         resultado = None
         try:

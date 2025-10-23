@@ -14,7 +14,6 @@ def listAllEmpleados():
             print(emp)
     else:
         print("No hay empleados registrados")
-
 def validateFindEmpleado():
     run = input("Ingrese el RUN del empleado a buscar: ")
     if run == "":
@@ -159,6 +158,7 @@ def validateAddCliente():
 
 def listAllVehiculos():
     print("\n=== LISTADO DE VEHÍCULOS ===")
+    VehiculoDTO().cargarVehiculosBase()
     resultado = VehiculoDTO().listarVehiculos()
     if len(resultado) > 0:
         for veh in resultado:
@@ -244,10 +244,12 @@ def validateAddVehiculo():
 
 def listAllArriendos():
     print("\n=== LISTADO DE ARRIENDOS ===")
-    resultado = ArriendoDTO().listarArriendos()
+    #ArriendoDTO().cargarArriendosBase() 
+    resultado = ArriendoDTO().cargarArriendosBase()
     if len(resultado) > 0:
-        for arr in resultado:
-            print(arr)
+        print(resultado)
+        #for arr in resultado:
+            #print(arr)
     else:
         print("No hay arriendos registrados")
 

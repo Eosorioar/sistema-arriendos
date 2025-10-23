@@ -5,23 +5,20 @@ class ClienteDTO:
     def __init__(self):
         self.dao = daoCliente()
     
-    def cargarClientesBase(self):
+    def listarClientes(self):
+        # CONSULTA DIRECTAMENTE LA BD CADA VEZ
         resultado = self.dao.getAllClientes()
+        clientes = []
         if resultado is not None:
             for cli in resultado:
-                # ✅ CORREGIDO - los índices ahora son correctos
                 cliente = Cliente(run=cli[0], nombre=cli[1], apellido=cli[2], 
                                 telefono=cli[3], direccion=cli[4])
-                cliente.getListaClientes().append(cliente)
-    
-    def listarClientes(self):
-        cliente = Cliente("", "", "", "", "")
-        return cliente.getListaClientes()
+                clientes.append(cliente)
+        return clientes
     
     def buscarCliente(self, run):
         resultado = self.dao.findCliente(run)
         if resultado:
-            # ✅ CORREGIDO - índices correctos
             return Cliente(run=resultado[0], nombre=resultado[1], apellido=resultado[2], 
                          telefono=resultado[3], direccion=resultado[4])
         return None

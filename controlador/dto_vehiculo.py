@@ -5,17 +5,16 @@ class VehiculoDTO:
     def __init__(self):
         self.dao = daoVehiculo()
     
-    def cargarVehiculosBase(self):
+    def listarVehiculos(self):
+        # CONSULTA DIRECTAMENTE LA BD CADA VEZ
         resultado = self.dao.getAllVehiculos()
+        vehiculos = []
         if resultado is not None:
             for veh in resultado:
                 vehiculo = Vehiculo(patente=veh[0], marca=veh[1], modelo=veh[2], 
                                   año=veh[3], precio=veh[4], disponible=veh[5])
-                vehiculo.getListaVehiculos().append(vehiculo)
-    
-    def listarVehiculos(self):
-        vehiculo = Vehiculo("", "", "", 0, 0)
-        return vehiculo.getListaVehiculos()
+                vehiculos.append(vehiculo)
+        return vehiculos
     
     def buscarVehiculo(self, patente):
         resultado = self.dao.findVehiculo(patente)
