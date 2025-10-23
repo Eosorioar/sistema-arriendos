@@ -34,3 +34,5 @@ class ClienteDTO:
     def eliminarCliente(self, run):
         resultado = self.dao.deleteCliente(run)
         return resultado
+    
+    # ELIMINAS cargarClientesBase() - YA NO SE NECESITA    

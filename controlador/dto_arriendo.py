@@ -50,6 +50,4 @@ class ArriendoDTO:
             return resultado
         return "Error: Cliente, empleado o vehículo no encontrado"
     
-    def eliminarArriendo(self, numArriendo):
-        resultado = self.dao.deleteArriendo(numArriendo)
-        return resultado
+    # ELIMINADO: cargarArriendosBase() - YA NO SE NECESITA

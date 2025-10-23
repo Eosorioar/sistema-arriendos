@@ -39,3 +39,4 @@ class VehiculoDTO:
             for veh in resultado:
                 vehiculos.append(Vehiculo(veh[0], veh[1], veh[2], veh[3], veh[4], veh[5]))
         return vehiculos
+    

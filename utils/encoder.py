@@ -1,5 +1,13 @@
 import bcrypt
 
+while True:
+    pwd = input("Ingresa contraseña (ENTER para salir): ")
+    if not pwd:
+        break
+    hashed = bcrypt.hashpw(pwd.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    print(f"Hash para '{pwd}': {hashed}")
+
+
 class Encoder:
 
     def encode(self, string):  

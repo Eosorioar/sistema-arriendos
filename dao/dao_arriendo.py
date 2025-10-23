@@ -82,3 +82,24 @@ class daoArriendo:
         finally:
             c.closeConex()
         return resultado
+    
+    def deleteArriendo(self, numArriendo):
+        sql = "DELETE FROM arriendo WHERE numArriendo = %s"
+        c = self.getConex()
+        mensaje = ""
+        try:
+            cursor = c.getConex().cursor()
+            cursor.execute(sql, (numArriendo,))
+            c.getConex().commit()
+            filas = cursor.rowcount
+            if filas > 0:
+                mensaje = "✅ Arriendo eliminado satisfactoriamente"
+            else:
+                mensaje = "ℹ️ No se realizaron cambios"
+        except Exception as ex:
+            print(traceback.print_exc())
+            mensaje = "❌ Problemas con la base de datos... vuelva a intentarlo"
+        finally:
+            c.closeConex()
+        return mensaje
+    

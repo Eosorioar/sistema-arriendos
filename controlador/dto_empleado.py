@@ -53,3 +53,5 @@ class EmpleadoDTO:
     def eliminarEmpleado(self, run):
         resultado = self.dao.deleteEmpleado(run)
         return resultado
+    
+    # ELIMINADO: cargarEmpleadosBase() - YA NO SE NECESITA

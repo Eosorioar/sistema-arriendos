@@ -2,6 +2,7 @@ from controlador.dto_empleado import EmpleadoDTO
 from controlador.dto_cliente import ClienteDTO
 from controlador.dto_vehiculo import VehiculoDTO
 from controlador.dto_arriendo import ArriendoDTO
+from dao.dao_arriendo import daoArriendo
 from utils.encoder import Encoder
 
 # ========== VALIDACIONES EMPLEADO ==========
@@ -14,6 +15,7 @@ def listAllEmpleados():
             print(emp)
     else:
         print("No hay empleados registrados")
+
 def validateFindEmpleado():
     run = input("Ingrese el RUN del empleado a buscar: ")
     if run == "":
@@ -83,7 +85,7 @@ def validateAddEmpleado():
 
 def listAllClientes():
     print("\n=== LISTADO DE CLIENTES ===")
-    resultado = ClienteDTO().listarClientes()
+    resultado = ClienteDTO().listarClientes()  # ← Esto ahora consulta la BD directamente
     if len(resultado) > 0:
         for cli in resultado:
             print(cli)
@@ -158,7 +160,6 @@ def validateAddCliente():
 
 def listAllVehiculos():
     print("\n=== LISTADO DE VEHÍCULOS ===")
-    VehiculoDTO().cargarVehiculosBase()
     resultado = VehiculoDTO().listarVehiculos()
     if len(resultado) > 0:
         for veh in resultado:
@@ -244,12 +245,11 @@ def validateAddVehiculo():
 
 def listAllArriendos():
     print("\n=== LISTADO DE ARRIENDOS ===")
-    #ArriendoDTO().cargarArriendosBase() 
-    resultado = ArriendoDTO().cargarArriendosBase()
+    resultado = ArriendoDTO().listarArriendos()
     if len(resultado) > 0:
         print(resultado)
-        #for arr in resultado:
-            #print(arr)
+        for arr in resultado:
+            print(arr)
     else:
         print("No hay arriendos registrados")
 
@@ -279,6 +279,26 @@ def validateAddArriendo():
         
         print(ArriendoDTO().agregarArriendo(numArriendo, fechaInicio, fechaEntrega, costoTotal, run_cliente, run_empleado, patente_vehiculo))
 
+def validaDelArriendo():
+    print("\n=== ELIMINAR ARRIENDO ===")
+    try:
+        numArriendo = int(input("Ingrese número de arriendo a eliminar: "))
+    except ValueError:
+        print("❌ Debe ingresar un número válido")
+        return
+    
+    # Buscar el arriendo primero para mostrar datos
+    dao = daoArriendo()
+    arriendo = dao.findArriendo(numArriendo)
+    
+    if arriendo:
+        print(f"Datos del arriendo: #{arriendo[0]} - Cliente: {arriendo[5]} {arriendo[6]}")
+        respuesta = input("¿Confirmar eliminación? [s/n]: ")
+        if respuesta.lower() == "s":
+            resultado = dao.deleteArriendo(numArriendo)
+            print(resultado)
+    else:
+        print("❌ Arriendo no encontrado")
 # ========== VALIDACIÓN LOGIN ==========
 
 def validarLogin():
@@ -289,147 +309,155 @@ def validarLogin():
 
 # ========== MENÚS ==========
 
-def menuPrincipal():
-    print("\n=== SISTEMA DE ARRIENDOS ===")
-    print("1. Gestión de Empleados")
-    print("2. Gestión de Clientes")
-    print("3. Gestión de Vehículos")
-    print("4. Gestión de Arriendos")
-    print("5. Salir")
-    opc = int(input("Ingrese una opción: "))
-    return opc
+def menuEmpleados(empleado):
+    """
+    Menú de gestión de empleados con validación de permisos
+    """
+    while True:
+        print("\n=== GESTIÓN DE EMPLEADOS ===")
+        print("1. Listar Empleados")
+        
+        # Solo el gerente puede realizar operaciones CRUD completas
+        if empleado.getCargo().strip().lower() == 'gerente':
+            print("2. Agregar Empleado")
+            print("3. Eliminar Empleado")
+            print("4. Actualizar Empleado")
+            print("5. Buscar Empleado")
+            print("6. Volver al Menú Principal")
+        else:
+            print("2. Volver al Menú Principal")
+        
+        opc = input("Ingrese una opción: ")
+        
+        if empleado.getCargo().strip().lower() == 'gerente':
+            if opc == "1":
+                listAllEmpleados()
+            elif opc == "2":
+                validateAddEmpleado()
+            elif opc == "3":
+                validaDelEmpleado()
+            elif opc == "4":
+                validateUpdateEmpleado()
+            elif opc == "5":
+                validateFindEmpleado()
+            elif opc == "6":
+                return "6"  # Indicar que quiere volver
+            else:
+                print("Opción no válida")
+        else:
+            # Para empleados no gerentes
+            if opc == "1":
+                listAllEmpleados()
+            elif opc == "2":
+                return "6"  # Volver al menú principal
+            else:
+                print("Opción no válida")
 
-def menuEmpleados():
-    print("\n=== GESTIÓN DE EMPLEADOS ===")
-    print("1. Listar Empleados")
-    print("2. Agregar Empleado")
-    print("3. Eliminar Empleado")
-    print("4. Actualizar Empleado")
-    print("5. Buscar Empleado")
-    print("6. Volver al Menú Principal")
-    opc = int(input("Ingrese una opción: "))
-    return opc
 
 def menuClientes():
-    print("\n=== GESTIÓN DE CLIENTES ===")
-    print("1. Listar Clientes")
-    print("2. Agregar Cliente")
-    print("3. Eliminar Cliente")
-    print("4. Actualizar Cliente")
-    print("5. Buscar Cliente")
-    print("6. Volver al Menú Principal")
-    opc = int(input("Ingrese una opción: "))
-    return opc
+    while True:
+        print("\n=== Gestión de Clientes ===")
+        print("1. Listar clientes")
+        print("2. Agregar cliente")
+        print("3. Eliminar Cliente")
+        print("4. Actualizar Cliente")
+        print("5. Buscar Cliente")
+        print("6. salir")
+        opc = input("Seleccione una opción: ")
+
+        if opc == "1":
+            listAllClientes()
+        elif opc == "2":
+            validateAddCliente()
+        elif opc == "3":
+            validaDelCliente()
+        elif opc == "4":
+            validateUpdateCliente()
+        elif opc == "5":
+            validateFindCliente()
+        elif opc == "6":
+            break            
+        else:
+            print("Opción no válida.")
 
 def menuVehiculos():
-    print("\n=== GESTIÓN DE VEHÍCULOS ===")
-    print("1. Listar Vehículos")
-    print("2. Listar Vehículos Disponibles")
-    print("3. Agregar Vehículo")
-    print("4. Eliminar Vehículo")
-    print("5. Actualizar Vehículo")
-    print("6. Buscar Vehículo")
-    print("7. Volver al Menú Principal")
-    opc = int(input("Ingrese una opción: "))
-    return opc
+    while True:
+        print("\n=== Gestión de Vehiculos ===")
+        print("1. Listar vehiculos")
+        print("2. Agregar vehiculo")
+        print("3. Eliminar vehiculo")
+        print("4. Actualizar vehiculo")
+        print("5. Buscar vehiculo")
+        print("6. salir")
+        opc = input("Seleccione una opción: ")
+
+        if opc == "1":
+            listAllVehiculos()
+        elif opc == "2":
+            validateAddVehiculo()
+        elif opc == "3":
+            validaDelVehiculo()
+        elif opc == "4":
+            validateUpdateVehiculo()
+        elif opc == "5":
+            validateFindVehiculo()        
+        elif opc == "6":
+            break  
+        else:
+            print("Opción no válida.")
 
 def menuArriendos():
-    print("\n=== GESTIÓN DE ARRIENDOS ===")
-    print("1. Listar Arriendos")
-    print("2. Agregar Arriendo")
-    print("3. Buscar Arriendo")
-    print("4. Volver al Menú Principal")
-    opc = int(input("Ingrese una opción: "))
-    return opc
+    while True:
+        print("\n=== Gestión de Arriendos ===")
+        print("1. Listar arriendos")
+        print("2. Agregar arriendo")
+        print("3. Eliminar ariendo")
+        print("4. Buscar arriendo")
+        print("5. salir")
+        opc = input("Seleccione una opción: ")
 
+        if opc == "1":
+            listAllArriendos()
+        elif opc == "2":
+            validateAddArriendo()
+        elif opc == "3":
+            validaDelArriendo()
+        elif opc == "4":
+            validateFindArriendo()
+        elif opc == "5":
+            break         
+        else:
+            print("Opción no válida.")
 # ========== INICIALIZACIÓN ==========
 
-def inicial():
-    # Cargar datos base de todas las entidades
-    print("Cargando datos...")
-    EmpleadoDTO().cargarEmpleadosBase()
-    ClienteDTO().cargarClientesBase()
-    VehiculoDTO().cargarVehiculosBase()
-    ArriendoDTO().cargarArriendosBase()
-    print("Datos cargados exitosamente!")
-    
-    # Sistema de login
-    print("\n=== LOGIN ===")
-    empleado = validarLogin()
-    if empleado is not None:
-        print(f"¡Bienvenido(a) {empleado.getNombre()} {empleado.getApellido()}!")
-        mainMenu()
-    else:
-        print("Credenciales incorrectas")
 
-def mainMenu():
+def menuPrincipal(empleado):
+    """
+    Menú principal del sistema que recibe el empleado logueado
+    """
     while True:
-        opc = menuPrincipal()
+        print("\n=== MENÚ PRINCIPAL ===")
+        print("1. Gestión de Clientes")
+        print("2. Gestión de Vehículos")
+        print("3. Gestión de Arriendos")
+        print("4. Gestión de Empleados")
+        print("5. Salir")
         
-        if opc == 1:  # Empleados
-            while True:
-                opc_emp = menuEmpleados()
-                if opc_emp == 1:
-                    listAllEmpleados()
-                elif opc_emp == 2:
-                    validateAddEmpleado()
-                elif opc_emp == 3:
-                    validaDelEmpleado()
-                elif opc_emp == 4:
-                    validateUpdateEmpleado()
-                elif opc_emp == 5:
-                    validateFindEmpleado()
-                else:
-                    break
-                    
-        elif opc == 2:  # Clientes
-            while True:
-                opc_cli = menuClientes()
-                if opc_cli == 1:
-                    listAllClientes()
-                elif opc_cli == 2:
-                    validateAddCliente()
-                elif opc_cli == 3:
-                    validaDelCliente()
-                elif opc_cli == 4:
-                    validateUpdateCliente()
-                elif opc_cli == 5:
-                    validateFindCliente()
-                else:
-                    break
-                    
-        elif opc == 3:  # Vehículos
-            while True:
-                opc_veh = menuVehiculos()
-                if opc_veh == 1:
-                    listAllVehiculos()
-                elif opc_veh == 2:
-                    listVehiculosDisponibles()
-                elif opc_veh == 3:
-                    validateAddVehiculo()
-                elif opc_veh == 4:
-                    validaDelVehiculo()
-                elif opc_veh == 5:
-                    validateUpdateVehiculo()
-                elif opc_veh == 6:
-                    validateFindVehiculo()
-                else:
-                    break
-                    
-        elif opc == 4:  # Arriendos
-            while True:
-                opc_arr = menuArriendos()
-                if opc_arr == 1:
-                    listAllArriendos()
-                elif opc_arr == 2:
-                    validateAddArriendo()
-                elif opc_arr == 3:
-                    validateFindArriendo()
-                else:
-                    break
-                    
-        elif opc == 5:  # Salir
-            print("¡Hasta pronto!")
+        opc = input("Seleccione una opción: ")
+
+        if opc == "1":
+            menuClientes()
+        elif opc == "2":
+            menuVehiculos()
+        elif opc == "3":
+            menuArriendos()
+        elif opc == "4":
+            # Pasar el empleado al menú de empleados para validar permisos
+            opc_emp = menuEmpleados(empleado)
+            if opc_emp == "6":  # Volver
+                continue
+        elif opc == "5":
+            print(" Saliendo del sistema...")
             break
         else:
-            print("Opción inválida")
+            print("Opción no válida.")
