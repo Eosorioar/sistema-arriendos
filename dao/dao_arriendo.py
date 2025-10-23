@@ -62,25 +62,28 @@ class daoArriendo:
 
     def getAllArriendos(self):
         sql = """SELECT a.numArriendo, a.fechaInicio, a.fechaEntrega, a.costoTotal,
-                    pc.run as cliente_run, pc.nombre as cliente_nombre, pc.apellido as cliente_apellido,
-                    pe.run as empleado_run, pe.nombre as empleado_nombre, pe.apellido as empleado_apellido,
-                    v.patente, v.marca, v.modelo
-                FROM arriendo a
-                JOIN cliente c ON a.run_cliente = c.run
-                JOIN persona pc ON c.run = pc.run  -- JOIN con persona para el cliente
-                JOIN empleado e ON a.run_empleado = e.run  
-                JOIN persona pe ON e.run = pe.run  -- JOIN con persona para el empleado
-                JOIN vehiculo v ON a.patente_vehiculo = v.patente"""
-        c = self.getConex()
+                pc.run as cliente_run, pc.nombre as cliente_nombre, pc.apellido as cliente_apellido,
+                pe.run as empleado_run, pe.nombre as empleado_nombre, pe.apellido as empleado_apellido,
+                v.patente, v.marca, v.modelo
+            FROM arriendo a
+            JOIN cliente c ON a.run_cliente = c.run
+            JOIN persona pc ON c.run = pc.run
+            JOIN empleado e ON a.run_empleado = e.run  
+            JOIN persona pe ON e.run = pe.run
+            JOIN vehiculo v ON a.patente_vehiculo = v.patente"""
+        
         resultado = None
         try:
+            c = self.getConex()
             cursor = c.getConex().cursor()
             cursor.execute(sql)
             resultado = cursor.fetchall()
+            cursor.close()
         except Exception as ex:
-            print(ex)
+            print(f"Error en getAllArriendos: {ex}")
         finally:
-            c.closeConex()
+            if 'c' in locals() and c:
+                c.closeConex()
         return resultado
     
     def deleteArriendo(self, numArriendo):

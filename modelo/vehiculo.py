@@ -3,7 +3,7 @@ from datetime import datetime
 class Vehiculo:
     __listaVehiculos = []
     
-    def __init__(self, patente, marca, modelo, año, precio, disponible="disponible"):
+    def __init__(self, patente="", marca="", modelo="", año=0, precio=0, disponible="disponible"):
         self.__patente = patente
         self.__marca = marca
         self.__modelo = modelo

@@ -6,30 +6,50 @@ class VehiculoDTO:
         self.dao = daoVehiculo()
     
     def listarVehiculos(self):
-        # CONSULTA DIRECTAMENTE LA BD CADA VEZ
         resultado = self.dao.getAllVehiculos()
         vehiculos = []
         if resultado is not None:
             for veh in resultado:
-                vehiculo = Vehiculo(patente=veh[0], marca=veh[1], modelo=veh[2], 
-                                  año=veh[3], precio=veh[4], disponible=veh[5])
+                # SOLUCIÓN: Usar constructor con todos los datos
+                vehiculo = Vehiculo(
+                    patente=veh[0],
+                    marca=veh[1], 
+                    modelo=veh[2],
+                    año=veh[3], 
+                    precio=veh[4],
+                    disponible=veh[5]
+                )
                 vehiculos.append(vehiculo)
         return vehiculos
     
-    def buscarVehiculo(self, patente):
-        resultado = self.dao.findVehiculo(patente)
-        return Vehiculo(resultado[0], resultado[1], resultado[2], resultado[3], resultado[4], resultado[5]) if resultado else None
+    def buscarVehiculo(self, vehiculo):
+        resultado = self.dao.findVehiculo(vehiculo.getPatente())
+        if resultado:
+            # SOLUCIÓN: Constructor con datos de BD
+            vehiculo_encontrado = Vehiculo(
+                patente=resultado[0],
+                marca=resultado[1], 
+                modelo=resultado[2],
+                año=resultado[3], 
+                precio=resultado[4],
+                disponible=resultado[5]
+            )
+            return vehiculo_encontrado
+        return None
     
-    def agregarVehiculo(self, patente, marca, modelo, año, precio):
-        resultado = self.dao.addVehiculo(Vehiculo(patente, marca, modelo, año, precio, "disponible"))
+    def agregarVehiculo(self, vehiculo):
+        # Asegurar estado "disponible" por defecto
+        if not vehiculo.getDisponible():
+            vehiculo.setDisponible("disponible")
+        resultado = self.dao.addVehiculo(vehiculo)
         return resultado
     
-    def actualizarVehiculo(self, patente, marca, modelo, año, precio, disponible):
-        resultado = self.dao.updateVehiculo(Vehiculo(patente, marca, modelo, año, precio, disponible))
+    def actualizarVehiculo(self, vehiculo):
+        resultado = self.dao.updateVehiculo(vehiculo)
         return resultado
     
-    def eliminarVehiculo(self, patente):
-        resultado = self.dao.deleteVehiculo(patente)
+    def eliminarVehiculo(self, vehiculo):
+        resultado = self.dao.deleteVehiculo(vehiculo.getPatente())
         return resultado
     
     def listarVehiculosDisponibles(self):
@@ -37,6 +57,13 @@ class VehiculoDTO:
         vehiculos = []
         if resultado is not None:
             for veh in resultado:
-                vehiculos.append(Vehiculo(veh[0], veh[1], veh[2], veh[3], veh[4], veh[5]))
+                vehiculo = Vehiculo(
+                    patente=veh[0],
+                    marca=veh[1], 
+                    modelo=veh[2],
+                    año=veh[3], 
+                    precio=veh[4],
+                    disponible=veh[5]
+                )
+                vehiculos.append(vehiculo)
         return vehiculos
-    

@@ -4,7 +4,7 @@ from datetime import datetime
 class Empleado(Persona):
     __listaEmpleados = []
     
-    def __init__(self, run, nombre, apellido, codigo, cargo, password):
+    def __init__(self, run="", nombre="", apellido="", codigo=0, cargo="", password=""):
         super().__init__(run, nombre, apellido)
         self.__codigo = codigo
         self.__cargo = cargo

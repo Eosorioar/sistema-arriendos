@@ -3,7 +3,10 @@ from controlador.dto_cliente import ClienteDTO
 from controlador.dto_vehiculo import VehiculoDTO
 from controlador.dto_arriendo import ArriendoDTO
 from dao.dao_arriendo import daoArriendo
-from utils.encoder import Encoder
+from modelo.empleado import Empleado
+from modelo.cliente import Cliente
+from modelo.vehiculo import Vehiculo
+from modelo.arriendo import Arriendo
 
 # ========== VALIDACIONES EMPLEADO ==========
 
@@ -22,7 +25,9 @@ def validateFindEmpleado():
         print("RUN incorrecto")
         return validateFindEmpleado()
     else:
-        resu = EmpleadoDTO().buscarEmpleado(run)
+        # CORREGIDO: Usar constructor (NO setRun)
+        empleado_buscar = Empleado(run, "", "", 0, "", "")
+        resu = EmpleadoDTO().buscarEmpleado(empleado_buscar)
         if resu is not None:
             print(f"Resultado: {resu}")
         else:
@@ -34,12 +39,16 @@ def validaDelEmpleado():
         print("Debe ingresar un RUN")
         return validaDelEmpleado()
     
-    resu = EmpleadoDTO().buscarEmpleado(run)
+    # CORREGIDO: Usar constructor
+    empleado_buscar = Empleado(run, "", "", 0, "", "")
+    resu = EmpleadoDTO().buscarEmpleado(empleado_buscar)
+    
     if resu is not None:
         print("Datos -->", resu)
         respuesta = input("¿Está seguro de la eliminación? [s/n]: ")
         if respuesta.lower() == "s":
-            print(EmpleadoDTO().eliminarEmpleado(run))
+            empleado_eliminar = Empleado(run, "", "", 0, "", "")
+            print(EmpleadoDTO().eliminarEmpleado(empleado_eliminar))
         else:
             print("Eliminación cancelada")
     else:
@@ -51,7 +60,9 @@ def validateUpdateEmpleado():
         print("Debe ingresar un RUN")
         return validateUpdateEmpleado()
     
-    resu = EmpleadoDTO().buscarEmpleado(run)
+    empleado_buscar = Empleado(run, "", "", 0, "", "")
+    resu = EmpleadoDTO().buscarEmpleado(empleado_buscar)
+    
     if resu is not None:
         print("Datos actuales -->", resu)
         nombre = input("Ingrese nuevo nombre: ")
@@ -59,7 +70,9 @@ def validateUpdateEmpleado():
         cargo = input("Ingrese nuevo cargo: ")
         clave = input("Ingrese nueva contraseña: ")
         
-        print(EmpleadoDTO().actualizarEmpleado(run, nombre, apellido, cargo, clave))
+        # CORREGIDO: Constructor con todos los datos
+        empleado_actualizar = Empleado(run, nombre, apellido, 0, cargo, clave)
+        print(EmpleadoDTO().actualizarEmpleado(empleado_actualizar))
     else:
         print("Empleado no encontrado")
 
@@ -69,7 +82,9 @@ def validateAddEmpleado():
         print("Debe ingresar un RUN")
         return validateAddEmpleado()
     
-    resu = EmpleadoDTO().buscarEmpleado(run)
+    empleado_buscar = Empleado(run, "", "", 0, "", "")
+    resu = EmpleadoDTO().buscarEmpleado(empleado_buscar)
+    
     if resu is not None:
         print("Empleado ya existe -->", resu)
     else:
@@ -79,13 +94,14 @@ def validateAddEmpleado():
         cargo = input("Ingrese cargo: ")
         clave = input("Ingrese contraseña: ")
         
-        print(EmpleadoDTO().agregarEmpleado(run, nombre, apellido, codigo, cargo, clave))
+        empleado_nuevo = Empleado(run, nombre, apellido, codigo, cargo, clave)
+        print(EmpleadoDTO().agregarEmpleado(empleado_nuevo))
 
 # ========== VALIDACIONES CLIENTE ==========
 
 def listAllClientes():
     print("\n=== LISTADO DE CLIENTES ===")
-    resultado = ClienteDTO().listarClientes()  # ← Esto ahora consulta la BD directamente
+    resultado = ClienteDTO().listarClientes()
     if len(resultado) > 0:
         for cli in resultado:
             print(cli)
@@ -98,7 +114,9 @@ def validateFindCliente():
         print("RUN incorrecto")
         return validateFindCliente()
     else:
-        resu = ClienteDTO().buscarCliente(run)
+        # CORREGIDO: Usar constructor
+        cliente_buscar = Cliente(run, "", "", "", "")
+        resu = ClienteDTO().buscarCliente(cliente_buscar)
         if resu is not None:
             print(f"Resultado: {resu}")
         else:
@@ -110,12 +128,15 @@ def validaDelCliente():
         print("Debe ingresar un RUN")
         return validaDelCliente()
     
-    resu = ClienteDTO().buscarCliente(run)
+    cliente_buscar = Cliente(run, "", "", "", "")
+    resu = ClienteDTO().buscarCliente(cliente_buscar)
+    
     if resu is not None:
         print("Datos -->", resu)
         respuesta = input("¿Está seguro de la eliminación? [s/n]: ")
         if respuesta.lower() == "s":
-            print(ClienteDTO().eliminarCliente(run))
+            cliente_eliminar = Cliente(run, "", "", "", "")
+            print(ClienteDTO().eliminarCliente(cliente_eliminar))
         else:
             print("Eliminación cancelada")
     else:
@@ -127,7 +148,9 @@ def validateUpdateCliente():
         print("Debe ingresar un RUN")
         return validateUpdateCliente()
     
-    resu = ClienteDTO().buscarCliente(run)
+    cliente_buscar = Cliente(run, "", "", "", "")
+    resu = ClienteDTO().buscarCliente(cliente_buscar)
+    
     if resu is not None:
         print("Datos actuales -->", resu)
         nombre = input("Ingrese nuevo nombre: ")
@@ -135,7 +158,8 @@ def validateUpdateCliente():
         telefono = input("Ingrese nuevo teléfono: ")
         direccion = input("Ingrese nueva dirección: ")
         
-        print(ClienteDTO().actualizarCliente(run, nombre, apellido, telefono, direccion))
+        cliente_actualizar = Cliente(run, nombre, apellido, telefono, direccion)
+        print(ClienteDTO().actualizarCliente(cliente_actualizar))
     else:
         print("Cliente no encontrado")
 
@@ -145,7 +169,9 @@ def validateAddCliente():
         print("Debe ingresar un RUN")
         return validateAddCliente()
     
-    resu = ClienteDTO().buscarCliente(run)
+    cliente_buscar = Cliente(run, "", "", "", "")
+    resu = ClienteDTO().buscarCliente(cliente_buscar)
+    
     if resu is not None:
         print("Cliente ya existe -->", resu)
     else:
@@ -154,7 +180,8 @@ def validateAddCliente():
         telefono = input("Ingrese teléfono: ")
         direccion = input("Ingrese dirección: ")
         
-        print(ClienteDTO().agregarCliente(run, nombre, apellido, telefono, direccion))
+        cliente_nuevo = Cliente(run, nombre, apellido, telefono, direccion)
+        print(ClienteDTO().agregarCliente(cliente_nuevo))
 
 # ========== VALIDACIONES VEHÍCULO ==========
 
@@ -182,7 +209,9 @@ def validateFindVehiculo():
         print("Patente incorrecta")
         return validateFindVehiculo()
     else:
-        resu = VehiculoDTO().buscarVehiculo(patente)
+        # CORREGIDO: Usar constructor
+        vehiculo_buscar = Vehiculo(patente, "", "", 0, 0, "")
+        resu = VehiculoDTO().buscarVehiculo(vehiculo_buscar)
         if resu is not None:
             print(f"Resultado: {resu}")
         else:
@@ -194,12 +223,15 @@ def validaDelVehiculo():
         print("Debe ingresar una patente")
         return validaDelVehiculo()
     
-    resu = VehiculoDTO().buscarVehiculo(patente)
+    vehiculo_buscar = Vehiculo(patente, "", "", 0, 0, "")
+    resu = VehiculoDTO().buscarVehiculo(vehiculo_buscar)
+    
     if resu is not None:
         print("Datos -->", resu)
         respuesta = input("¿Está seguro de la eliminación? [s/n]: ")
         if respuesta.lower() == "s":
-            print(VehiculoDTO().eliminarVehiculo(patente))
+            vehiculo_eliminar = Vehiculo(patente, "", "", 0, 0, "")
+            print(VehiculoDTO().eliminarVehiculo(vehiculo_eliminar))
         else:
             print("Eliminación cancelada")
     else:
@@ -211,7 +243,9 @@ def validateUpdateVehiculo():
         print("Debe ingresar una patente")
         return validateUpdateVehiculo()
     
-    resu = VehiculoDTO().buscarVehiculo(patente)
+    vehiculo_buscar = Vehiculo(patente, "", "", 0, 0, "")
+    resu = VehiculoDTO().buscarVehiculo(vehiculo_buscar)
+    
     if resu is not None:
         print("Datos actuales -->", resu)
         marca = input("Ingrese nueva marca: ")
@@ -220,7 +254,8 @@ def validateUpdateVehiculo():
         precio = float(input("Ingrese nuevo precio: "))
         disponible = input("Ingrese estado [disponible/arrendado]: ")
         
-        print(VehiculoDTO().actualizarVehiculo(patente, marca, modelo, año, precio, disponible))
+        vehiculo_actualizar = Vehiculo(patente, marca, modelo, año, precio, disponible)
+        print(VehiculoDTO().actualizarVehiculo(vehiculo_actualizar))
     else:
         print("Vehículo no encontrado")
 
@@ -230,7 +265,9 @@ def validateAddVehiculo():
         print("Debe ingresar una patente")
         return validateAddVehiculo()
     
-    resu = VehiculoDTO().buscarVehiculo(patente)
+    vehiculo_buscar = Vehiculo(patente, "", "", 0, 0, "")
+    resu = VehiculoDTO().buscarVehiculo(vehiculo_buscar)
+    
     if resu is not None:
         print("Vehículo ya existe -->", resu)
     else:
@@ -239,7 +276,8 @@ def validateAddVehiculo():
         año = int(input("Ingrese año: "))
         precio = float(input("Ingrese precio: "))
         
-        print(VehiculoDTO().agregarVehiculo(patente, marca, modelo, año, precio))
+        vehiculo_nuevo = Vehiculo(patente, marca, modelo, año, precio, "disponible")
+        print(VehiculoDTO().agregarVehiculo(vehiculo_nuevo))
 
 # ========== VALIDACIONES ARRIENDO ==========
 
@@ -247,7 +285,6 @@ def listAllArriendos():
     print("\n=== LISTADO DE ARRIENDOS ===")
     resultado = ArriendoDTO().listarArriendos()
     if len(resultado) > 0:
-        print(resultado)
         for arr in resultado:
             print(arr)
     else:
@@ -255,7 +292,9 @@ def listAllArriendos():
 
 def validateFindArriendo():
     numArriendo = int(input("Ingrese el número de arriendo a buscar: "))
-    resu = ArriendoDTO().buscarArriendo(numArriendo)
+    # CORREGIDO: Usar constructor
+    arriendo_buscar = Arriendo(numArriendo, None, None, 0, None, None, None)
+    resu = ArriendoDTO().buscarArriendo(arriendo_buscar)
     if resu is not None:
         print(f"Resultado: {resu}")
     else:
@@ -266,7 +305,9 @@ def validateAddArriendo():
     numArriendo = int(input("Ingrese número de arriendo: "))
     
     # Verificar si ya existe
-    resu = ArriendoDTO().buscarArriendo(numArriendo)
+    arriendo_buscar = Arriendo(numArriendo, None, None, 0, None, None, None)
+    resu = ArriendoDTO().buscarArriendo(arriendo_buscar)
+    
     if resu is not None:
         print("Arriendo ya existe -->", resu)
     else:
@@ -277,7 +318,13 @@ def validateAddArriendo():
         run_empleado = input("Ingrese RUN del empleado: ")
         patente_vehiculo = input("Ingrese patente del vehículo: ")
         
-        print(ArriendoDTO().agregarArriendo(numArriendo, fechaInicio, fechaEntrega, costoTotal, run_cliente, run_empleado, patente_vehiculo))
+        # Crear objetos para las relaciones
+        cliente = Cliente(run_cliente, "", "", "", "")
+        empleado = Empleado(run_empleado, "", "", 0, "", "")
+        vehiculo = Vehiculo(patente_vehiculo, "", "", 0, 0, "")
+        
+        arriendo_nuevo = Arriendo(numArriendo, fechaInicio, fechaEntrega, costoTotal, cliente, empleado, vehiculo)
+        print(ArriendoDTO().agregarArriendo(arriendo_nuevo))
 
 def validaDelArriendo():
     print("\n=== ELIMINAR ARRIENDO ===")
@@ -287,37 +334,38 @@ def validaDelArriendo():
         print("❌ Debe ingresar un número válido")
         return
     
-    # Buscar el arriendo primero para mostrar datos
-    dao = daoArriendo()
-    arriendo = dao.findArriendo(numArriendo)
+    # CORREGIDO: Usar DTO en lugar de DAO directo
+    arriendo_buscar = Arriendo(numArriendo, None, None, 0, None, None, None)
+    arriendo = ArriendoDTO().buscarArriendo(arriendo_buscar)
     
     if arriendo:
-        print(f"Datos del arriendo: #{arriendo[0]} - Cliente: {arriendo[5]} {arriendo[6]}")
+        print(f"Datos del arriendo: {arriendo}")
         respuesta = input("¿Confirmar eliminación? [s/n]: ")
         if respuesta.lower() == "s":
-            resultado = dao.deleteArriendo(numArriendo)
+            resultado = ArriendoDTO().eliminarArriendo(arriendo)
             print(resultado)
     else:
         print("❌ Arriendo no encontrado")
+
 # ========== VALIDACIÓN LOGIN ==========
 
 def validarLogin():
     run = input("Ingrese RUN: ")
     clave = input("Ingrese contraseña: ")
-    resultado = EmpleadoDTO().validarLogin(run, clave)
+    
+    # CORREGIDO: Constructor con TODOS los parámetros requeridos
+    empleado_login = Empleado(run, "", "", 0, "", clave)  # ✅ TODOS LOS PARÁMETROS
+    resultado = EmpleadoDTO().validarLogin(empleado_login)
     return resultado
 
 # ========== MENÚS ==========
+# (Los menús se mantienen igual - solo interfaz de usuario)
 
 def menuEmpleados(empleado):
-    """
-    Menú de gestión de empleados con validación de permisos
-    """
     while True:
         print("\n=== GESTIÓN DE EMPLEADOS ===")
         print("1. Listar Empleados")
         
-        # Solo el gerente puede realizar operaciones CRUD completas
         if empleado.getCargo().strip().lower() == 'gerente':
             print("2. Agregar Empleado")
             print("3. Eliminar Empleado")
@@ -341,18 +389,16 @@ def menuEmpleados(empleado):
             elif opc == "5":
                 validateFindEmpleado()
             elif opc == "6":
-                return "6"  # Indicar que quiere volver
+                return "6"
             else:
                 print("Opción no válida")
         else:
-            # Para empleados no gerentes
             if opc == "1":
                 listAllEmpleados()
             elif opc == "2":
-                return "6"  # Volver al menú principal
+                return "6"
             else:
                 print("Opción no válida")
-
 
 def menuClientes():
     while True:
@@ -428,13 +474,8 @@ def menuArriendos():
             break         
         else:
             print("Opción no válida.")
-# ========== INICIALIZACIÓN ==========
-
 
 def menuPrincipal(empleado):
-    """
-    Menú principal del sistema que recibe el empleado logueado
-    """
     while True:
         print("\n=== MENÚ PRINCIPAL ===")
         print("1. Gestión de Clientes")
@@ -452,9 +493,8 @@ def menuPrincipal(empleado):
         elif opc == "3":
             menuArriendos()
         elif opc == "4":
-            # Pasar el empleado al menú de empleados para validar permisos
             opc_emp = menuEmpleados(empleado)
-            if opc_emp == "6":  # Volver
+            if opc_emp == "6":
                 continue
         elif opc == "5":
             print(" Saliendo del sistema...")
