@@ -76,12 +76,15 @@ class daoCliente:
         return mensaje
 
     def deleteCliente(self, run):
-        sql = "DELETE FROM cliente WHERE run = %s"
+        sql_cliente = "DELETE FROM cliente WHERE run = %s"
+        sql_persona = "DELETE FROM persona WHERE run = %s"
         c = self.getConex()
         mensaje = ""
         try:
             cursor = c.getConex().cursor()
-            cursor.execute(sql, (run,))
+            cursor.execute(sql_cliente, (run,))
+            cursor.execute(sql_persona, (run,))
+
             c.getConex().commit()
             filas = cursor.rowcount
             if filas > 0:
@@ -94,7 +97,7 @@ class daoCliente:
         finally:
             c.closeConex()
         return mensaje
-
+    
     def getAllClientes(self):
         
         sql = """SELECT p.run, p.nombre, p.apellido, c.telefono, c.direccion 

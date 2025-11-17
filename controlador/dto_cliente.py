@@ -21,7 +21,8 @@ class ClienteDTO:
                 clientes.append(cliente)
         return clientes
     
-    def buscarCliente(self, cliente):
+    def buscarCliente(self, run):
+        cliente = Cliente(run, "", "", "", "")
         resultado = self.dao.findCliente(cliente.getRun())
         if resultado:
            
@@ -35,14 +36,17 @@ class ClienteDTO:
             return cliente_encontrado
         return None
     
-    def agregarCliente(self, cliente):
+    def agregarCliente(self, run, nombre, apellido, telefono, direccion):
+        cliente = Cliente(run, nombre, apellido, telefono, direccion)
         resultado = self.dao.addCliente(cliente)
         return resultado
     
-    def actualizarCliente(self, cliente):
+    def actualizarCliente(self, run, nombre, apellido, telefono, direccion):
+        cliente = Cliente(run, nombre, apellido, telefono, direccion)
         resultado = self.dao.updateCliente(cliente)
         return resultado
     
-    def eliminarCliente(self, cliente):
+    def eliminarCliente(self, run):
+        cliente= Cliente(run, "", "", "", "")
         resultado = self.dao.deleteCliente(cliente.getRun())
         return resultado

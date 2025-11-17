@@ -87,13 +87,16 @@ class daoEmpleado:
         return mensaje
 
     def deleteEmpleado(self, run):
-        # Al tener CASCADE, eliminar de empleado elimina también de persona
-        sql = "DELETE FROM empleado WHERE run = %s"
+        sql_empleado = "DELETE FROM empleado WHERE run = %s"
+        sql_persona = "DELETE FROM persona WHERE run = %s"
+
         c = self.getConex()
         mensaje = ""
         try:
             cursor = c.getConex().cursor()
-            cursor.execute(sql, (run,))
+            cursor.execute(sql_empleado, (run,))
+            cursor.execute(sql_persona, (run,))
+
             c.getConex().commit()
             filas = cursor.rowcount
             if filas > 0:

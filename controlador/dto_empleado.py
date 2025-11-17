@@ -22,7 +22,8 @@ class EmpleadoDTO:
                 empleados.append(empleado)
         return empleados
     
-    def buscarEmpleado(self, empleado): 
+    def buscarEmpleado(self, run):
+        empleado = Empleado(run, "", "", 0, "", "")
         resultado = self.dao.findEmpleado(empleado.getRun())  
         if resultado:
             empleado_encontrado = Empleado(
@@ -51,18 +52,23 @@ class EmpleadoDTO:
                 return empleado_valido
         return None
     
-    def agregarEmpleado(self, empleado): 
-        # Encriptar password antes de guardar
+    def agregarEmpleado(self, run, nombre, apellido, codigo, cargo, clave): 
+        empleado = Empleado(run, nombre, apellido, codigo, cargo, clave)
         empleado.setPassword(Encoder().encode(empleado.getPassword()))
         resultado = self.dao.addEmpleado(empleado)
         return resultado
     
-    def actualizarEmpleado(self, empleado):  
-        # Encriptar password antes de actualizar
+    def actualizarEmpleado(self, run, nombre, apellido, cargo, clave):
+        empleado_existente = self.buscarEmpleado(run)
+        
+        if not empleado_existente:
+            return "Empleado no encontrado"
+        empleado = Empleado(run, nombre, apellido, empleado_existente.getCodigo(), cargo, clave)
         empleado.setPassword(Encoder().encode(empleado.getPassword()))
         resultado = self.dao.updateEmpleado(empleado)
         return resultado
-    
-    def eliminarEmpleado(self, empleado):  
+
+    def eliminarEmpleado(self, run):
+        empleado= Empleado(run, "", "", 0, "", "")
         resultado = self.dao.deleteEmpleado(empleado.getRun())  
         return resultado

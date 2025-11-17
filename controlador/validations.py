@@ -10,12 +10,31 @@ import msvcrt
 import sys 
 import re 
 # ========== VALIDACIONES ENTRADA ==========
-def validar_contraseña_segura(contraseña):
+def validar_run(run):
+    """
+    Valida formato de RUN chileno (12345678-9 o 12345678-K)
+    """
+    if not run.strip():
+        return False, "❌ El RUN no puede estar vacío"
+    
+    # Convertir 'k' a 'K' para consistencia
+    run = run.upper()
+    
+    # Validar formato con soporte para K
+    if not re.match(r'^[0-9]{7,8}-[0-9K]{1}$', run):
+        return False, "❌ Formato de RUN inválido. Debe ser: 12345678-9 o 12345678-K"
+    
+    return True, run
+
+def validar_contraseña_segura(contraseña, max_caracteres=30):
     """
     Valida que la contraseña cumpla con los requisitos de seguridad
     """
     if len(contraseña) < 8:
         return False, "La contraseña debe tener al menos 8 caracteres"
+    
+    if len(contraseña) > max_caracteres:
+        return False, f"La contraseña no puede tener más de {max_caracteres} caracteres"
     
     if not re.search(r'[A-Z]', contraseña):
         return False, "La contraseña debe contener al menos una mayúscula"
@@ -37,7 +56,7 @@ def input_contraseña_segura():
     """
     while True:
         contraseña = input("Ingrese contraseña: ")
-        es_valida, mensaje = validar_contraseña_segura(contraseña)
+        es_valida, mensaje = validar_contraseña_segura(contraseña, 30)  # ← Agregar el límite
         
         if es_valida:
             # Confirmar contraseña
@@ -47,11 +66,12 @@ def input_contraseña_segura():
             else:
                 print("❌ Las contraseñas no coinciden. Intente nuevamente.\n")
         else:
-            print(f"❌ {mensaje}. Intente nuevamente.\n")  
+            print(f"❌ {mensaje}. Intente nuevamente.\n")
 
-def validar_texto(valor, campo="valor"):
+def validar_texto(valor, campo="valor", max_caracteres=30):
     """
     Valida que el string contenga solo letras, espacios y algunos caracteres especiales
+    con límite mínimo y máximo
     """
     if not valor.strip():
         return False, f"❌ El {campo} no puede estar vacío"
@@ -62,6 +82,9 @@ def validar_texto(valor, campo="valor"):
     
     if len(valor.strip()) < 2:
         return False, f"❌ El {campo} debe tener al menos 2 caracteres"
+    
+    if len(valor.strip()) > max_caracteres:
+        return False, f"❌ El {campo} no puede tener más de {max_caracteres} caracteres"
     
     return True, "✅ Válido"
 
@@ -83,15 +106,18 @@ def validar_telefono(telefono):
     
     return True, telefono_limpio
 
-def validar_direccion(direccion):
+def validar_direccion(direccion, max_caracteres=20):
     """
-    Valida que la dirección contenga texto y números
+    Valida que la dirección contenga texto y números con límite máximo
     """
     if not direccion.strip():
         return False, "❌ La dirección no puede estar vacía"
     
     if len(direccion.strip()) < 5:
         return False, "❌ La dirección debe tener al menos 5 caracteres"
+    
+    if len(direccion.strip()) > max_caracteres:
+        return False, f"❌ La dirección no puede tener más de {max_caracteres} caracteres"
     
     # Verificar que tenga al menos una letra y un número
     if not re.search(r'[a-zA-Z]', direccion) or not re.search(r'\d', direccion):
@@ -116,9 +142,7 @@ def validateFindEmpleado():
         print("RUN incorrecto")
         return validateFindEmpleado()
     else:
-     
-        empleado_buscar = Empleado(run, "", "", 0, "", "")
-        resu = EmpleadoDTO().buscarEmpleado(empleado_buscar)
+        resu = EmpleadoDTO().buscarEmpleado(run)
         if resu is not None:
             print(f"Resultado: {resu}")
         else:
@@ -131,15 +155,13 @@ def validaDelEmpleado():
         return validaDelEmpleado()
     
     
-    empleado_buscar = Empleado(run, "", "", 0, "", "")
-    resu = EmpleadoDTO().buscarEmpleado(empleado_buscar)
+    resu = EmpleadoDTO().buscarEmpleado(run)
     
     if resu is not None:
         print("Datos -->", resu)
         respuesta = input("¿Está seguro de la eliminación? [s/n]: ")
-        if respuesta.lower() == "s":
-            empleado_eliminar = Empleado(run, "", "", 0, "", "")
-            print(EmpleadoDTO().eliminarEmpleado(empleado_eliminar))
+        if respuesta.lower() == "s":  
+            print(EmpleadoDTO().eliminarEmpleado(run))
         else:
             print("Eliminación cancelada")
     else:
@@ -161,12 +183,13 @@ def validateUpdateEmpleado():
                 print("❌ Debe ingresar un RUN")
                 continue
             
-            if not re.match(r'^[0-9]{7,8}-[0-9kK]{1}$', run):
-                print("❌ Formato de RUN inválido. Debe ser: 12345678-9")
+            es_valido, run_limpio = validar_run(run)
+            if not es_valido:
+                print(run_limpio)  # Mensaje de error
                 continue
-            
-            empleado_buscar = Empleado(run, "", "", 0, "", "")
-            resu = EmpleadoDTO().buscarEmpleado(empleado_buscar)
+            run = run_limpio  # Usar RUN limpio (K reemplazado si aplica)
+
+            resu = EmpleadoDTO().buscarEmpleado(run)
             
             if resu is None:
                 print("❌ Empleado no encontrado")
@@ -266,8 +289,8 @@ def validateUpdateEmpleado():
                 continue
             
             # Ejecutar actualización
-            empleado_actualizar = Empleado(run, nombre, apellido, 0, cargo, clave)
-            resultado = EmpleadoDTO().actualizarEmpleado(empleado_actualizar)
+
+            resultado = EmpleadoDTO().actualizarEmpleado(run, nombre, apellido, cargo, clave)
             print(f"✅ {resultado}")
             
             # Preguntar si quiere actualizar otro
@@ -297,14 +320,14 @@ def validateAddEmpleado():
                 continue  # Vuelve al inicio del bucle
             
             # Validar formato básico de RUN
-            if not re.match(r'^[0-9]{7,8}-[0-9kK]{1}$', run):
-                print("❌ Formato de RUN inválido. Debe ser: 12345678-9")
-                print("   Ejemplos válidos: 12345678-9, 1234567-8")
+            es_valido, run_limpio = validar_run(run)
+            if not es_valido:
+                print(run_limpio)  # Mensaje de error
                 continue
+            run = run_limpio  # Usar RUN limpio (K reemplazado si aplica)
             
             # Verificar si el empleado ya existe
-            empleado_buscar = Empleado(run, "", "", 0, "", "")
-            resu = EmpleadoDTO().buscarEmpleado(empleado_buscar)
+            resu = EmpleadoDTO().buscarEmpleado(run)
             
             if resu is not None:
                 print(f"❌ El empleado con RUN {run} ya existe:")
@@ -382,8 +405,8 @@ def validateAddEmpleado():
                 continue
             
             # Crear empleado
-            empleado_nuevo = Empleado(run, nombre, apellido, codigo, cargo, clave)
-            resultado = EmpleadoDTO().agregarEmpleado(empleado_nuevo)
+            
+            resultado = EmpleadoDTO().agregarEmpleado(run, nombre, apellido, codigo, cargo, clave)
             print(f"✅ {resultado}")
             
             # Preguntar si quiere agregar otro
@@ -418,9 +441,7 @@ def validateFindCliente():
         print("RUN incorrecto")
         return validateFindCliente()
     else:
-        
-        cliente_buscar = Cliente(run, "", "", "", "")
-        resu = ClienteDTO().buscarCliente(cliente_buscar)
+        resu = ClienteDTO().buscarCliente(run)
         if resu is not None:
             print(f"Resultado: {resu}")
         else:
@@ -432,15 +453,14 @@ def validaDelCliente():
         print("Debe ingresar un RUN")
         return validaDelCliente()
     
-    cliente_buscar = Cliente(run, "", "", "", "")
-    resu = ClienteDTO().buscarCliente(cliente_buscar)
+    resu = ClienteDTO().buscarCliente(run)
     
     if resu is not None:
         print("Datos -->", resu)
         respuesta = input("¿Está seguro de la eliminación? [s/n]: ")
         if respuesta.lower() == "s":
-            cliente_eliminar = Cliente(run, "", "", "", "")
-            print(ClienteDTO().eliminarCliente(cliente_eliminar))
+            
+            print(ClienteDTO().eliminarCliente(run))
         else:
             print("Eliminación cancelada")
     else:
@@ -460,14 +480,14 @@ def validateAddCliente():
                 print("❌ Debe ingresar un RUN")
                 continue
             
-            # Validar formato de RUN
-            if not re.match(r'^[0-9]{7,8}-[0-9kK]{1}$', run):
-                print("❌ Formato de RUN inválido. Debe ser: 12345678-9")
+            es_valido, run_limpio = validar_run(run)
+            if not es_valido:
+                print(run_limpio)  # Mensaje de error
                 continue
+            run = run_limpio  # Usar RUN limpio (K reemplazado si aplica)
             
             # Verificar si el cliente ya existe
-            cliente_buscar = Cliente(run, "", "", "", "")
-            resu = ClienteDTO().buscarCliente(cliente_buscar)
+            resu = ClienteDTO().buscarCliente(run)
             
             if resu is not None:
                 print(f"❌ El cliente con RUN {run} ya existe:")
@@ -520,9 +540,7 @@ def validateAddCliente():
                 print("❌ Creación cancelada")
                 continue
             
-            # Crear cliente (usar teléfono limpio de 8 dígitos)
-            cliente_nuevo = Cliente(run, nombre, apellido, telefono, direccion)
-            resultado = ClienteDTO().agregarCliente(cliente_nuevo)
+            resultado = ClienteDTO().agregarCliente(run, nombre, apellido, telefono, direccion)
             print(f"✅ {resultado}")
             
             # Preguntar si quiere agregar otro
@@ -550,13 +568,13 @@ def validateUpdateCliente():
                 print("❌ Debe ingresar un RUN")
                 continue
             
-            # Validar formato de RUN
-            if not re.match(r'^[0-9]{7,8}-[0-9kK]{1}$', run):
-                print("❌ Formato de RUN inválido. Debe ser: 12345678-9")
+            es_valido, run_limpio = validar_run(run)
+            if not es_valido:
+                print(run_limpio)  # Mensaje de error
                 continue
+            run = run_limpio  # Usar RUN limpio (K reemplazado si aplica)
             
-            cliente_buscar = Cliente(run, "", "", "", "")
-            resu = ClienteDTO().buscarCliente(cliente_buscar)
+            resu = ClienteDTO().buscarCliente(run)
             
             if resu is None:
                 print("❌ Cliente no encontrado")
@@ -637,10 +655,8 @@ def validateUpdateCliente():
                 if continuar not in ['s', 'si', 'sí', 'y', 'yes']:
                     break
                 continue
-            
-            # Ejecutar actualización
-            cliente_actualizar = Cliente(run, nombre, apellido, telefono, direccion)
-            resultado = ClienteDTO().actualizarCliente(cliente_actualizar)
+
+            resultado = ClienteDTO().actualizarCliente(run, nombre, apellido, telefono, direccion)
             print(f"✅ {resultado}")
             
             # Preguntar si quiere actualizar otro
@@ -840,7 +856,7 @@ def input_password(mensaje="Ingrese contraseña: "):
 
 
 def validarLogin():
-    run = input("Ingrese RUN: ")
+    run = input("Ingrese RUN(sin puntos y con guion ): ")
     clave = input_password("Ingrese contraseña: ")
     
     
