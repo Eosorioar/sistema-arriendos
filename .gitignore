@@ -1,0 +1,21 @@
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Base de datos (NO subir)
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de entorno
+.env
+venv/
+
+# Logs
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
