@@ -34,25 +34,27 @@ CREATE TABLE IF NOT EXISTS cliente (
 );
 
 -- ==================================================
--- TABLA VEHICULO
+-- TABLA VEHICULO (ACTUALIZADA)
 -- ==================================================
 CREATE TABLE IF NOT EXISTS vehiculo (
     patente VARCHAR(10) PRIMARY KEY,
     marca VARCHAR(30) NOT NULL,
     modelo VARCHAR(30) NOT NULL,
     año INT NOT NULL,
-    precio DECIMAL(10,2) NOT NULL,
-    disponible ENUM('disponible', 'arrendado') DEFAULT 'disponible'
+    precio_uf DECIMAL(10,2) NOT NULL,  -- Cambiado de 'precio' a 'precio_uf'
+    disponible ENUM('disponible', 'reservado', 'ocupado', 'mantención') DEFAULT 'disponible'  -- 4 estados
 );
 
 -- ==================================================
--- TABLA ARRIENDO
+-- TABLA ARRIENDO (PREPARADA PARA API UF)
 -- ==================================================
 CREATE TABLE IF NOT EXISTS arriendo (
     numArriendo INT AUTO_INCREMENT PRIMARY KEY,
     fechaInicio DATE NOT NULL,
     fechaEntrega DATE NOT NULL,
-    costoTotal DECIMAL(10,2) NOT NULL,
+    costo_total_uf DECIMAL(10,2) NOT NULL,      -- Total en UF
+    valor_uf_dia DECIMAL(10,2) NOT NULL,        -- Valor UF usado para cálculo
+    costo_total_pesos DECIMAL(12,2) NOT NULL,   -- Total en pesos chilenos
     run_cliente VARCHAR(12) NOT NULL,
     run_empleado VARCHAR(12) NOT NULL,
     patente_vehiculo VARCHAR(10) NOT NULL,
@@ -64,7 +66,7 @@ CREATE TABLE IF NOT EXISTS arriendo (
 );
 
 -- ==================================================
--- DATOS DE PRUEBA
+-- DATOS DE PRUEBA ACTUALIZADOS
 -- ==================================================
 
 -- Insertar gerente por defecto (password: 123)
@@ -88,12 +90,15 @@ INSERT IGNORE INTO persona (run, nombre, apellido) VALUES
 INSERT IGNORE INTO cliente (run, telefono, direccion) VALUES 
 ('33333333-3', '12345678', 'Calle Principal 123');
 
--- Insertar vehículo de prueba
-INSERT IGNORE INTO vehiculo (patente, marca, modelo, año, precio, disponible) VALUES 
-('ABC123', 'Toyota', 'Corolla', 2022, 25000.00, 'disponible');
+-- Insertar vehículos de prueba con precio_uf y diferentes estados
+INSERT IGNORE INTO vehiculo (patente, marca, modelo, año, precio_uf, disponible) VALUES 
+('AB-CD-12', 'Toyota', 'Corolla', 2022, 1.5, 'disponible'),
+('BC-DE-34', 'Honda', 'Civic', 2023, 2.0, 'reservado'),
+('CD-EF-56', 'Ford', 'Focus', 2021, 1.2, 'ocupado'),
+('DE-FG-78', 'Chevrolet', 'Spark', 2020, 0.8, 'mantención');
 
 -- ==================================================
--- CONSULTAS ÚTILES
+-- CONSULTAS ÚTILES ACTUALIZADAS
 -- ==================================================
 
 -- Ver empleados con información completa
@@ -106,7 +111,12 @@ SELECT p.run, p.nombre, p.apellido, c.telefono, c.direccion
 FROM cliente c 
 JOIN persona p ON c.run = p.run;
 
--- Ver vehículos disponibles
-SELECT patente, marca, modelo, año, precio 
+-- Ver vehículos disponibles para arriendo (disponible + reservado)
+SELECT patente, marca, modelo, año, precio_uf, disponible 
 FROM vehiculo 
-WHERE disponible = 'disponible';
+WHERE disponible IN ('disponible', 'reservado');
+
+-- Ver todos los vehículos con estados
+SELECT patente, marca, modelo, año, precio_uf, disponible 
+FROM vehiculo 
+ORDER BY disponible, marca;

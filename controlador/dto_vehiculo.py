@@ -10,7 +10,7 @@ class VehiculoDTO:
         vehiculos = []
         if resultado is not None:
             for veh in resultado:
-               
+                
                 vehiculo = Vehiculo(
                     patente=veh[0],
                     marca=veh[1], 
@@ -22,10 +22,11 @@ class VehiculoDTO:
                 vehiculos.append(vehiculo)
         return vehiculos
     
-    def buscarVehiculo(self, vehiculo):
-        resultado = self.dao.findVehiculo(vehiculo.getPatente())
+    def buscarVehiculo(self, patente):
+        vehiculo_temp = Vehiculo(patente, "", "", 0, 0, "")
+        resultado = self.dao.findVehiculo(vehiculo_temp.getPatente())
         if resultado:
-           
+
             vehiculo_encontrado = Vehiculo(
                 patente=resultado[0],
                 marca=resultado[1], 
@@ -37,19 +38,19 @@ class VehiculoDTO:
             return vehiculo_encontrado
         return None
     
-    def agregarVehiculo(self, vehiculo):
-        # Asegurar estado "disponible" por defecto
-        if not vehiculo.getDisponible():
-            vehiculo.setDisponible("disponible")
+    def agregarVehiculo(self, patente, marca, modelo, año, precio, disponible):
+        vehiculo = Vehiculo(patente, marca, modelo, año, precio, disponible)
         resultado = self.dao.addVehiculo(vehiculo)
         return resultado
     
-    def actualizarVehiculo(self, vehiculo):
+    def actualizarVehiculo(self, patente, marca, modelo, año, precio, disponible):
+        vehiculo = Vehiculo(patente, marca, modelo, año, precio, disponible)
         resultado = self.dao.updateVehiculo(vehiculo)
         return resultado
     
-    def eliminarVehiculo(self, vehiculo):
-        resultado = self.dao.deleteVehiculo(vehiculo.getPatente())
+    def eliminarVehiculo(self, patente):
+        vehiculo_temp = Vehiculo(patente, "", "", 0, 0, "")
+        resultado = self.dao.deleteVehiculo(vehiculo_temp.getPatente())
         return resultado
     
     def listarVehiculosDisponibles(self):

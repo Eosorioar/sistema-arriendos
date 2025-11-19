@@ -24,3 +24,21 @@ class daoPersona:
             return False
         finally:
             c.closeConex()
+
+    def existePersona(self, run):
+        """
+
+        Verifica si una persona existe (en cualquier tabla)
+        """
+        sql = "SELECT run FROM persona WHERE run = %s"
+        c = self.getConex()
+        try:
+            cursor = c.getConex().cursor()
+            cursor.execute(sql, (run,))
+            resultado = cursor.fetchone()
+            return resultado is not None
+        except Exception as ex:
+            print(traceback.print_exc())
+            return False
+        finally:
+            c.closeConex()

@@ -17,36 +17,15 @@ class ArriendoDTO:
     def listarArriendos(self):
         resultado = self.dao.getAllArriendos()
         arriendos = []
-    
+
         if resultado is not None:
             for arr in resultado:
                 try:
-                    cliente = Cliente(
-                        run=arr[4],      
-                        nombre=arr[5],    
-                        apellido=arr[6], 
-                        telefono="",     
-                        direccion=""     
-                    )
-                
-                    empleado = Empleado(
-                        run=arr[7],      
-                        nombre=arr[8],   
-                        apellido=arr[9], 
-                        codigo=0,        
-                        cargo="",        
-                        password=""      
-                    )
-                
-                    vehiculo = Vehiculo(
-                        patente=arr[10], 
-                        marca=arr[11],   
-                        modelo=arr[12],  
-                        año=0,           
-                        precio=0,        
-                        disponible=""    
-                    )
-                
+                    # Crear objetos completos desde los datos del JOIN
+                    cliente = Cliente(arr[4], arr[5], arr[6], "", "")
+                    empleado = Empleado(arr[7], arr[8], arr[9], 0, "", "")
+                    vehiculo = Vehiculo(arr[10], arr[11], arr[12], 0, 0, "")
+                    
                     arriendo = Arriendo(
                         numArriendo=arr[0],
                         fechaInicio=arr[1],
@@ -57,51 +36,60 @@ class ArriendoDTO:
                         vehiculo=vehiculo
                     )
                     arriendos.append(arriendo)
-                
+
                 except Exception as e:
                     print(f"Error creando arriendo: {e}")
                     continue
         return arriendos
     
-    def buscarArriendo(self, arriendo):
-        resultado = self.dao.findArriendo(arriendo.getNumArriendo())
+    def buscarArriendo(self, numArriendo):
+        # Mismo patrón simple que VehiculoDTO
+        resultado = self.dao.findArriendo(numArriendo)
         if resultado:
-            # CORREGIDO: Usar constructores con imports
-            cliente_buscar = Cliente(resultado[4], "", "", "", "")
-            empleado_buscar = Empleado(resultado[7], "", "", 0, "", "")
-            vehiculo_buscar = Vehiculo(resultado[10], "", "", 0, 0, "")
+            # Crear objetos desde los datos del JOIN
+            cliente = Cliente(resultado[4], resultado[5], resultado[6], "", "")
+            empleado = Empleado(resultado[7], resultado[8], resultado[9], 0, "", "")
+            vehiculo = Vehiculo(resultado[10], resultado[11], resultado[12], 0, 0, "")
             
-            cliente = self.cliente_dto.buscarCliente(cliente_buscar)
-            empleado = self.empleado_dto.buscarEmpleado(empleado_buscar)
-            vehiculo = self.vehiculo_dto.buscarVehiculo(vehiculo_buscar)
-            
-            if cliente and empleado and vehiculo:
-                arriendo_encontrado = Arriendo(
-                    numArriendo=resultado[0],
-                    fechaInicio=resultado[1],
-                    fechaEntrega=resultado[2],
-                    costoTotal=resultado[3],
-                    cliente=cliente,
-                    empleado=empleado,
-                    vehiculo=vehiculo
-                )
-                return arriendo_encontrado
+            arriendo_encontrado = Arriendo(
+                numArriendo=resultado[0],
+                fechaInicio=resultado[1],
+                fechaEntrega=resultado[2],
+                costoTotal=resultado[3],
+                cliente=cliente,
+                empleado=empleado,
+                vehiculo=vehiculo
+            )
+            return arriendo_encontrado
         return None
     
-    def agregarArriendo(self, arriendo):
-        # CORREGIDO: Ya recibe objeto completo
-        cliente = self.cliente_dto.buscarCliente(arriendo.getCliente())
-        empleado = self.empleado_dto.buscarEmpleado(arriendo.getEmpleado())
-        vehiculo = self.vehiculo_dto.buscarVehiculo(arriendo.getVehiculo())
+    def agregarArriendo(self, numArriendo, fechaInicio, fechaEntrega, costoTotal, run_cliente, run_empleado, patente_vehiculo):
+        # Mismo patrón que otros DTOs - recibir parámetros primitivos
+        # Buscar objetos completos primero
+        cliente = self.cliente_dto.buscarCliente(run_cliente)
+        empleado = self.empleado_dto.buscarEmpleado(run_empleado)
+        vehiculo = self.vehiculo_dto.buscarVehiculo(patente_vehiculo)
         
         if cliente and empleado and vehiculo:
-            arriendo.setCliente(cliente)
-            arriendo.setEmpleado(empleado)
-            arriendo.setVehiculo(vehiculo)
+            # Crear arriendo con objetos completos
+            arriendo = Arriendo(numArriendo, fechaInicio, fechaEntrega, costoTotal, cliente, empleado, vehiculo)
             resultado = self.dao.addArriendo(arriendo)
             return resultado
-        return "Error: Cliente, empleado o vehículo no encontrado"
+        return "❌ Error: Cliente, empleado o vehículo no encontrado"
+    
+    def actualizarArriendo(self, numArriendo, fechaInicio, fechaEntrega, costoTotal, run_cliente, run_empleado, patente_vehiculo):
+        # Nuevo método para actualizar
+        cliente = self.cliente_dto.buscarCliente(run_cliente)
+        empleado = self.empleado_dto.buscarEmpleado(run_empleado)
+        vehiculo = self.vehiculo_dto.buscarVehiculo(patente_vehiculo)
+        
+        if cliente and empleado and vehiculo:
+            arriendo = Arriendo(numArriendo, fechaInicio, fechaEntrega, costoTotal, cliente, empleado, vehiculo)
+            resultado = self.dao.updateArriendo(arriendo)
+            return resultado
+        return "❌ Error: Cliente, empleado o vehículo no encontrado"
     
     def eliminarArriendo(self, arriendo):
+        # Mantener consistencia - recibir objeto
         resultado = self.dao.deleteArriendo(arriendo.getNumArriendo())
         return resultado
