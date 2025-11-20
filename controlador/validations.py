@@ -11,6 +11,10 @@ import msvcrt
 import sys 
 import re 
 from datetime import datetime, timedelta
+from utils.api_uf import UFApiClient 
+
+cliente_uf = UFApiClient()
+
 # ========== VALIDACIONES ENTRADA ==========
 def validar_codigo_empleado(codigo_input, empleado_dto):
     """
@@ -1121,48 +1125,126 @@ import re
 
 # ========== VALIDACIONES DE ENTRADA DE ARRIENDO ==========
 
-def determinar_tipo_arriendo(fecha_inicio, fecha_entrega):
+def calcular_costo_arriendo(vehiculo, dias_arriendo, tipo_arriendo, fecha_inicio=None, fecha_entrega=None):
     """
-    Determina si el arriendo es pasado, presente/mixto, o futuro
+    Calcula costo según tipo de arriendo usando datos reales de API
+    CORREGIDO: Manejo de fechas para tipo MIXTO
     """
     try:
-        hoy = datetime.now().date()
-        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
-        fecha_entrega_dt = datetime.strptime(fecha_entrega, '%Y-%m-%d').date()
+        precio_uf_dia = vehiculo.getPrecio()
         
-        if fecha_entrega_dt < hoy:
-            return "pasado"    # ✅ Totalmente en el pasado
-        elif fecha_inicio_dt > hoy:
-            return "futuro"    # ✅ Totalmente en el futuro
+        if tipo_arriendo == "pasado":
+            # ✅ Cálculo 100% REAL con UF histórica exacta
+            uf_valor = cliente_uf.obtener_uf_mas_cercana(fecha_inicio)
+            if not uf_valor:
+                uf_valor = cliente_uf.obtener_ultima_uf_disponible() or 36000
+            
+            costo_uf = precio_uf_dia * dias_arriendo
+            costo_pesos = costo_uf * uf_valor
+            
+            return {
+                'tipo': 'real',
+                'costo_uf': round(costo_uf, 2),
+                'costo_pesos': round(costo_pesos, 2),
+                'uf_valor': uf_valor,
+                'dias': dias_arriendo,
+                'precio_uf_dia': precio_uf_dia,
+                'estado': 'confirmado',
+                'mensaje': f'💰 CÁLCULO REAL: Precio con UF histórica (${uf_valor:,.0f})'
+            }
+        
+        elif tipo_arriendo == "futuro":
+            # ⏳ Cálculo ESTIMADO con última UF disponible
+            uf_valor = cliente_uf.obtener_ultima_uf_disponible() or 36000
+            costo_uf = precio_uf_dia * dias_arriendo
+            costo_pesos = costo_uf * uf_valor
+            
+            return {
+                'tipo': 'estimado',
+                'costo_uf': round(costo_uf, 2),
+                'costo_pesos': round(costo_pesos, 2),
+                'uf_valor': uf_valor,
+                'dias': dias_arriendo,
+                'precio_uf_dia': precio_uf_dia,
+                'estado': 'reservado',
+                'mensaje': f'⚠️ COTIZACIÓN: Precio calculado con última UF disponible (${uf_valor:,.0f})'
+            }
+        
+        else:  # mixto
+            # 🔄 Cálculo MIXTO (parte real + parte estimada)
+            # ✅ CORREGIDO: Verificar que las fechas no sean None
+            if not fecha_inicio or not fecha_entrega:
+                print("❌ Error: Fechas no proporcionadas para cálculo mixto")
+                return None
+                
+            fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d')
+            fecha_entrega_obj = datetime.strptime(fecha_entrega, '%Y-%m-%d')
+            hoy = datetime.now().date()
+            
+            # Calcular días pasados vs futuros
+            dias_pasados = 0
+            dias_futuros = 0
+            fecha_actual = fecha_inicio_obj.date()
+            
+            while fecha_actual < fecha_entrega_obj.date():
+                if fecha_actual <= hoy:
+                    dias_pasados += 1
+                else:
+                    dias_futuros += 1
+                fecha_actual += timedelta(days=1)
+            
+            # Calcular costos por segmento
+            uf_pasado = cliente_uf.obtener_uf_mas_cercana(fecha_inicio) or cliente_uf.obtener_ultima_uf_disponible() or 36000
+            uf_futuro = cliente_uf.obtener_ultima_uf_disponible() or 36000
+            
+            costo_pasado = (precio_uf_dia * dias_pasados) * uf_pasado
+            costo_futuro = (precio_uf_dia * dias_futuros) * uf_futuro
+            costo_total_pesos = costo_pasado + costo_futuro
+            costo_total_uf = precio_uf_dia * dias_arriendo
+            
+            return {
+                'tipo': 'mixto',
+                'costo_uf': round(costo_total_uf, 2),
+                'costo_pesos': round(costo_total_pesos, 2),
+                'uf_valor': uf_pasado,  # Valor representativo
+                'dias': dias_arriendo,
+                'dias_pasados': dias_pasados,
+                'dias_futuros': dias_futuros,
+                'precio_uf_dia': precio_uf_dia,
+                'estado': 'confirmado',
+                'mensaje': f'🔄 CÁLCULO MIXTO: {dias_pasados} días reales + {dias_futuros} días estimados'
+            }
+        
+    except Exception as e:
+        print(f"Error calculando costo: {e}")
+        return None
+
+def determinar_tipo_arriendo(fecha_inicio_str, fecha_entrega_str):
+    """
+    Determina si el arriendo es pasado, mixto, o futuro
+    CORREGIDO: Compara con el último día con datos UF, no con 'hoy'
+    """
+    try:
+        # Obtener el último día con datos UF disponibles
+        ultima_fecha_uf = cliente_uf.obtener_ultima_fecha_disponible()
+        if not ultima_fecha_uf:
+            return "futuro"  # Por defecto si no hay datos
+        
+        fecha_inicio_dt = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+        fecha_entrega_dt = datetime.strptime(fecha_entrega_str, '%Y-%m-%d').date()
+        ultima_fecha_uf_dt = datetime.strptime(ultima_fecha_uf, '%Y-%m-%d').date()
+        
+        # ✅ Lógica corregida: Comparar con último dato UF, no con 'hoy'
+        if fecha_entrega_dt <= ultima_fecha_uf_dt:
+            return "pasado"    # ✅ Totalmente dentro de datos históricos (REAL)
+        elif fecha_inicio_dt > ultima_fecha_uf_dt:
+            return "futuro"    # ✅ Totalmente fuera de datos históricos (ESTIMADO)
         else:
-            return "mixto"     # Incluye días pasados/presentes y futuros
+            return "mixto"     # ✅ Cruza el límite de datos (MIXTO)
         
-    except:
+    except Exception as e:
+        print(f"Error determinando tipo de arriendo: {e}")
         return "futuro"
-
-def obtener_uf_hoy():
-    """
-    Simula obtener UF de hoy (luego se reemplaza por API)
-    """
-    return 36000  # Valor fijo para testing
-
-def obtener_uf_fecha_historica(fecha):
-    """
-    Simula obtener UF histórica (luego se reemplaza por API)
-    """
-    # Por simplicidad, retorna valores diferentes según el año
-    try:
-        año = datetime.strptime(fecha, '%Y-%m-%d').year
-        if año <= 2020:
-            return 28000
-        elif año <= 2022:
-            return 30000
-        elif año <= 2023:
-            return 32000
-        else:
-            return 34000
-    except:
-        return 35000
 
 def validar_fecha_formato(fecha_str):
     """
@@ -1206,7 +1288,7 @@ def validar_fechas_arriendo(fecha_inicio_str, fecha_entrega_str):
         if dias_arriendo < 1:
             return False, "❌ El arriendo debe ser de al menos 1 día"
         
-        tipo = determinar_tipo_arriendo(fecha_inicio_str)
+        tipo = determinar_tipo_arriendo(fecha_inicio_str, fecha_entrega_str)
         
         return True, {
             'dias': dias_arriendo,
@@ -1323,67 +1405,7 @@ def validar_numero_arriendo(num_arriendo_str):
         return True, num_arriendo
     except ValueError:
         return False, "❌ El número de arriendo debe ser un número válido"
-
-def calcular_costo_arriendo(vehiculo, dias_arriendo, tipo_arriendo, fecha_inicio=None, fecha_entrega=None):
-    """
-    Calcula costo según el tipo de arriendo (pasado, mixto, futuro)
-    """
-    try:
-        precio_uf_dia = vehiculo.getPrecio()
-        
-        if tipo_arriendo == "pasado":
-            # ✅ Cálculo REAL con UF histórica
-            uf_valor = obtener_uf_fecha_historica(fecha_inicio)
-            costo_uf = precio_uf_dia * dias_arriendo
-            costo_pesos = costo_uf * uf_valor
-            
-            return {
-                'tipo': 'real',
-                'costo_uf': round(costo_uf, 2),
-                'costo_pesos': round(costo_pesos, 2),
-                'uf_valor': uf_valor,
-                'dias': dias_arriendo,
-                'precio_uf_dia': precio_uf_dia,
-                'estado': 'confirmado',
-                'mensaje': f'Cálculo real con UF histórica: ${uf_valor:,.0f}'
-            }
-        
-        elif tipo_arriendo == "futuro":
-            # ⏳ Cálculo ESTIMADO con UF actual
-            uf_valor = obtener_uf_hoy()
-            costo_uf = precio_uf_dia * dias_arriendo
-            costo_pesos = costo_uf * uf_valor
-            
-            return {
-                'tipo': 'estimado',
-                'costo_uf': round(costo_uf, 2),
-                'costo_pesos': round(costo_pesos, 2),
-                'uf_valor': uf_valor,
-                'dias': dias_arriendo,
-                'precio_uf_dia': precio_uf_dia,
-                'estado': 'reservado',
-                'mensaje': f'⚠️ COTIZACIÓN: Precio calculado con UF de hoy (${uf_valor:,.0f}), sujeto a cambios'
-            }
-        
-        else:  # mixto
-            # 🔄 Cálculo MIXTO (parte real + parte estimada)
-            uf_valor = obtener_uf_hoy()  # Por simplicidad, usamos UF actual
-            costo_uf = precio_uf_dia * dias_arriendo
-            costo_pesos = costo_uf * uf_valor
-            
-            return {
-                'tipo': 'mixto',
-                'costo_uf': round(costo_uf, 2),
-                'costo_pesos': round(costo_pesos, 2),
-                'uf_valor': uf_valor,
-                'dias': dias_arriendo,
-                'precio_uf_dia': precio_uf_dia,
-                'estado': 'confirmado',
-                'mensaje': f'⚠️ CÁLCULO MIXTO: Incluye días pasados y futuros. Precio con UF actual (${uf_valor:,.0f})'
-            }
-        
-    except Exception as e:
-        return None
+    
     
 # ========== VALIDACIONES ARRIENDO ==========
 
@@ -1555,11 +1577,10 @@ def validateAddArriendo():
 
             # 6. Calcular costo
             print("\n6️⃣  CÁLCULO DE COSTO")
-            calculo = calcular_costo_arriendo(vehiculo, dias_arriendo, tipo_arriendo, fecha_inicio)
-            
-            if not calculo:
-                print("❌ Error al calcular el costo del arriendo")
-                continue
+            if tipo_arriendo == "mixto":
+                calculo = calcular_costo_arriendo(vehiculo, dias_arriendo, tipo_arriendo, fecha_inicio, fecha_entrega)
+            else:
+                calculo = calcular_costo_arriendo(vehiculo, dias_arriendo, tipo_arriendo, fecha_inicio)    
 
             # 7. Mostrar resumen y confirmar
             datos_arriendo = {
@@ -1573,7 +1594,7 @@ def validateAddArriendo():
             
             mostrar_resumen_arriendo(datos_arriendo, calculo)
             
-            # 8. Confirmar creación
+            # 8. Confirmar creación y actualizar estado del vehículo (BLOQUE UNIFICADO)
             confirmar = input("\n¿Confirmar creación del arriendo? (S/N): ").strip().upper()
             if confirmar == 'S':
                 resultado = ArriendoDTO().agregarArriendo(
@@ -1581,38 +1602,34 @@ def validateAddArriendo():
                     calculo['costo_pesos'], run_cliente, run_empleado, patente_vehiculo
                 )
                 print(f"\n{resultado}")
-             #9 actualizar estado del vehiculo
-            confirmar = input("\n¿Confirmar creación del arriendo? (S/N): ").strip().upper()
-            if confirmar == 'S':
-                resultado = ArriendoDTO().agregarArriendo(
-                    num_arriendo, fecha_inicio, fecha_entrega, 
-                    calculo['costo_pesos'], run_cliente, run_empleado, patente_vehiculo
-                )
-                print(f"\n{resultado}")
-    
-        # ✅ ACTUALIZAR ESTADO DEL VEHÍCULO (UN SOLO BLOQUE)
-            if tipo_arriendo in ['presente', 'mixto', 'futuro']:
-                from controlador.dto_vehiculo import VehiculoDTO
-                vehiculo_dto = VehiculoDTO()
-        
-        # Determinar nuevo estado según tipo de arriendo
-                if tipo_arriendo in ['presente', 'mixto']:
-                    nuevo_estado = 'ocupado'
-                else:  # futuro
-                    nuevo_estado = 'reservado'
-        
-        # Obtener datos actuales del vehículo
-            vehiculo_actual = vehiculo_dto.buscarVehiculo(patente_vehiculo)
-            if vehiculo_actual:
-                resultado_vehiculo = vehiculo_dto.actualizarVehiculo(
-                    vehiculo_actual.getPatente(),
-                    vehiculo_actual.getMarca(),
-                    vehiculo_actual.getModelo(),
-                    vehiculo_actual.getAño(),
-                    vehiculo_actual.getPrecio(),
-                    nuevo_estado
-                )
-                print(f"✅ Estado del vehículo actualizado a: {nuevo_estado}")
+                
+                # ✅ ACTUALIZAR ESTADO DEL VEHÍCULO (BLOQUE UNIFICADO)
+                if tipo_arriendo in ['presente', 'mixto', 'futuro']:
+                    from controlador.dto_vehiculo import VehiculoDTO
+                    vehiculo_dto = VehiculoDTO()
+                    
+                    # Determinar nuevo estado según tipo de arriendo
+                    if tipo_arriendo == 'pasado':
+                        nuevo_estado = 'disponible'
+                    elif tipo_arriendo == 'mixto':
+                        nuevo_estado = 'ocupado'
+                    elif tipo_arriendo == 'futuro':
+                        nuevo_estado = 'reservado'   
+                    else:
+                        nuevo_estado = 'ocupado'
+                    
+                    # Obtener datos actuales del vehículo
+                    vehiculo_actual = vehiculo_dto.buscarVehiculo(patente_vehiculo)
+                    if vehiculo_actual:
+                        resultado_vehiculo = vehiculo_dto.actualizarVehiculo(
+                            vehiculo_actual.getPatente(),
+                            vehiculo_actual.getMarca(),
+                            vehiculo_actual.getModelo(),
+                            vehiculo_actual.getAño(),
+                            vehiculo_actual.getPrecio(),
+                            nuevo_estado
+                        )
+                        print(f"✅ Estado del vehículo actualizado a: {nuevo_estado}")
             else:
                 print("❌ Arriendo cancelado")
 
@@ -1747,17 +1764,32 @@ def validaDelArriendo():
             
             respuesta = input("\n¿Está seguro de eliminar este arriendo? [s/N]: ").strip().lower()
             if respuesta == 's':
+                # OBTENER LA PATENTE ANTES DE ELIMINAR
+                patente_vehiculo = arriendo.getVehiculo().getPatente()
+                
+                # ELIMINAR ARRIENDO
                 resultado = arriendo_dto.eliminarArriendo(arriendo)
                 print(f"\n{resultado}")
                 
-                # Liberar el vehículo si estaba ocupado/reservado
-                vehiculo = arriendo.getVehiculo()
-                if vehiculo.getDisponible() in ['ocupado', 'reservado']:
-                    from controlador.dto_vehiculo import VehiculoDTO
-                    vehiculo_dto = VehiculoDTO()
-                    vehiculo.setDisponible('disponible')
-                    vehiculo_dto.actualizarVehiculo(vehiculo)
-                    print("✅ Vehículo liberado y marcado como disponible")
+                # ✅ CORREGIDO: Liberar el vehículo usando el DTO correctamente
+                from controlador.dto_vehiculo import VehiculoDTO
+                vehiculo_dto = VehiculoDTO()
+                
+                # Buscar el vehículo actualizado
+                vehiculo_actual = vehiculo_dto.buscarVehiculo(patente_vehiculo)
+                if vehiculo_actual:
+                    # Actualizar estado a 'disponible'
+                    resultado_vehiculo = vehiculo_dto.actualizarVehiculo(
+                        vehiculo_actual.getPatente(),
+                        vehiculo_actual.getMarca(),
+                        vehiculo_actual.getModelo(),
+                        vehiculo_actual.getAño(),
+                        vehiculo_actual.getPrecio(),
+                        'disponible'  # ✅ Cambiar a disponible
+                    )
+                    print(f"✅ Vehículo {patente_vehiculo} liberado y marcado como disponible")
+                else:
+                    print(f"⚠️ No se pudo encontrar el vehículo {patente_vehiculo}")
             else:
                 print("❌ Eliminación cancelada")
         else:
@@ -1896,6 +1928,37 @@ def menuArriendos():
         print("\n=== Gestión de Arriendos ===")
         print("1. Listar arriendos")
         print("2. Agregar arriendo")
+        print("3. Eliminar arriendo")
+        print("4. Buscar arriendo")
+        print("5. 📊 Ver datos UF cargados")  # Nueva opción
+        print("6. salir")
+        opc = input("Seleccione una opción: ")
+
+        if opc == "1":
+            listAllArriendos()
+        elif opc == "2":
+            validateAddArriendo()
+        elif opc == "3":
+            validaDelArriendo()
+        elif opc == "4":
+            validateFindArriendo()
+        elif opc == "5":  # Nueva funcionalidad
+            print("\n" + "="*50)
+            print("📊 DATOS UF CARGADOS EN EL SISTEMA")
+            print("="*50)
+            cliente_uf.mostrar_datos_cargados()
+            print("="*50)
+            input("\nPresione Enter para continuar...")
+        elif opc == "6":
+            break         
+        else:
+            print("Opción no válida.")
+
+"""def menuArriendos():
+    while True:
+        print("\n=== Gestión de Arriendos ===")
+        print("1. Listar arriendos")
+        print("2. Agregar arriendo")
         print("3. Eliminar ariendo")
         print("4. Buscar arriendo")
         print("5. salir")
@@ -1912,7 +1975,7 @@ def menuArriendos():
         elif opc == "5":
             break         
         else:
-            print("Opción no válida.")
+            print("Opción no válida.")"""""
 
 def menuPrincipal(empleado):
     while True:

@@ -1,2 +1,3 @@
 pip install pymysql --- usar ultima versión disponible
 pip install bcrypt
+pip install request

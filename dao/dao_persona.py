@@ -11,19 +11,7 @@ class daoPersona:
     def getConex(self):
         return self.__conn
 
-    def existePersona(self, run):
-        sql = "SELECT run FROM persona WHERE run = %s"
-        c = self.getConex()
-        try:
-            cursor = c.getConex().cursor()
-            cursor.execute(sql, (run,))
-            resultado = cursor.fetchone()
-            return resultado is not None
-        except Exception as ex:
-            print(traceback.print_exc())
-            return False
-        finally:
-            c.closeConex()
+
 
     def existePersona(self, run):
         """
